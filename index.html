@@ -9,6 +9,7 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
     <style>
         :root {
@@ -115,7 +116,7 @@
 
         .svc-row{display:grid;grid-template-columns:1fr 130px 32px;gap:8px;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
 
-        /* REPERTORIO CON YOUTUBE */
+        /* REPERTORIO CON YOUTUBE Y ARRASTRE */
         .rep-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; align-items: flex-end; background: var(--color-background-secondary); padding: 12px; border-radius: 10px; border: 1px solid var(--color-border-tertiary); transition: all 0.2s;}
         .rep-row:hover { border-color: #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
         .rep-row input { background: white; font-size: 13px;}
@@ -128,6 +129,21 @@
         .rep-col-3 { flex: 1.5; min-width: 180px; }
         
         .youtube-label { display: flex; align-items: center; gap: 4px; color: #ef4444 !important;}
+
+        /* ICONO PARA ARRASTRAR */
+        .drag-handle { 
+            cursor: grab; 
+            padding: 5px; 
+            margin-bottom: 2px; 
+            color: #94a3b8; 
+            font-size: 18px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            transition: color 0.2s; 
+        }
+        .drag-handle:hover { color: #3C3489; }
+        .drag-handle:active { cursor: grabbing; }
 
         /* MODAL VISOR PDF */
         .modal-overlay {
@@ -353,7 +369,7 @@
     function saveCfg()  { syncCloud(); localStorage.setItem('saxlab_cfg', JSON.stringify(cfg)); }
     function saveRepTemplates() { syncCloud(); localStorage.setItem('saxlab_rep_templates_v2', JSON.stringify(plantillasRep)); }
 
-    // CARGA INICIAL DE DATOS (Por defecto usa el celular mientras descarga de la nube)
+    // CARGA INICIAL DE DATOS
     let items = [];
     let cotizaciones = JSON.parse(localStorage.getItem('saxlab_cots')) || [];
     let nextId = parseInt(localStorage.getItem('saxlab_nextId')) || 9;
@@ -377,7 +393,6 @@
         term: "El 50% del valor se cancela como anticipo al confirmar la reserva. El saldo restante se paga el día del evento. En caso de cancelación con menos de 72 horas, el anticipo no es reembolsable.\nEste mensaje es una cotización informativa. No es válido como factura de venta."
     };
 
-    // Plantillas de Repertorio por defecto ampliadas
     let plantillasPorDefecto = [
         { nombre: "Boda religiosa", momentos: [{momento: "Marcha de Entrada", cancion: "", link: ""}, {momento: "Señor ten piedad", cancion: "", link: ""}, {momento: "Aleluya", cancion: "", link: ""}, {momento: "Ofertorio", cancion: "", link: ""}, {momento: "Santo", cancion: "", link: ""}, {momento: "Paz", cancion: "", link: ""}, {momento: "Comunión", cancion: "", link: ""}, {momento: "Firmas", cancion: "", link: ""}, {momento: "Salida", cancion: "", link: ""}] },
         { nombre: "Boda civil", momentos: [{momento: "Ingreso de invitados", cancion: "", link: ""}, {momento: "Entrada del novio", cancion: "", link: ""}, {momento: "Entrada de la novia", cancion: "", link: ""}, {momento: "Firma de actas", cancion: "", link: ""}, {momento: "Salida", cancion: "", link: ""}] },
@@ -391,7 +406,6 @@
 
     const fmt = n => "$ " + Math.round(n).toLocaleString('es-CO');
 
-    // Función que carga los datos de la nube al abrir la página
     async function loadCloud() {
         toast('Sincronizando con la nube...', 'ok');
         try {
@@ -405,14 +419,12 @@
                 if(data.cfg) cfg = data.cfg;
                 if(data.plantillasRep) plantillasRep = data.plantillasRep;
                 
-                // Guardar como respaldo local
                 localStorage.setItem('saxlab_cots', JSON.stringify(cotizaciones));
                 localStorage.setItem('saxlab_svcs', JSON.stringify(svcs));
                 localStorage.setItem('saxlab_nextId', nextId);
                 localStorage.setItem('saxlab_cfg', JSON.stringify(cfg));
                 localStorage.setItem('saxlab_rep_templates_v2', JSON.stringify(plantillasRep));
 
-                // Refrescar toda la interfaz visual
                 renderChips();
                 renderItems();
                 inicializarRepertorio();
@@ -432,7 +444,7 @@
         }
     }
 
-    // Inicializar visualmente de inmediato con los datos locales
+    // Inicializar visualmente
     document.getElementById('hero-icon-el').textContent = cfg.logo || "🎹";
     document.getElementById('hero-name').textContent = cfg.nom;
     document.getElementById('hero-sub').textContent = cfg.esp + ' · ' + cfg.ciudad;
@@ -458,7 +470,7 @@
     }
 
     // ==========================================
-    // LÓGICA DE REPERTORIO Y SINCRONIZACIÓN
+    // LÓGICA DE REPERTORIO CON DRAG & DROP
     // ==========================================
     
     function inicializarRepertorio() {
@@ -495,6 +507,7 @@
         const cont = document.getElementById('rep-inputs-container');
         cont.innerHTML = momentosActuales.map((m, index) => `
             <div class="rep-row">
+                <div class="drag-handle" title="Arrastrar para mover"><i class="ti ti-grip-vertical"></i></div>
                 <div class="rep-col rep-col-1">
                     <label style="font-size:10px; color:var(--color-text-tertiary); text-transform:uppercase; font-weight:600;">Momento</label>
                     <input type="text" class="momento" value="${m.momento}" placeholder="Ej: Entrada" oninput="momentosActuales[${index}].momento=this.value" />
@@ -511,6 +524,22 @@
             </div>
         `).join('');
         actualizarSelectPlantillasRep();
+        activarArrastre();
+    }
+
+    let sortableInstance = null;
+    function activarArrastre() {
+        const cont = document.getElementById('rep-inputs-container');
+        if(sortableInstance) { sortableInstance.destroy(); }
+        sortableInstance = new Sortable(cont, {
+            handle: '.drag-handle',
+            animation: 150,
+            onEnd: function (evt) {
+                const itemMovido = momentosActuales.splice(evt.oldIndex, 1)[0];
+                momentosActuales.splice(evt.newIndex, 0, itemMovido);
+                renderRepertorioInputs();
+            }
+        });
     }
 
     function agregarMomentoRepertorio() {
@@ -525,11 +554,9 @@
 
     function actualizarSelectPlantillasRep() {
         const sel = document.getElementById('sel-template-rep');
-        const valorActual = sel.value;
         sel.innerHTML = '<option value="">-- Seleccionar Plantilla --</option>' + 
             plantillasRep.map((p, i) => `<option value="${i}">${p.nombre}</option>`).join('');
         
-        // Intentar mantener selección si el nombre coincide
         const currentName = document.getElementById('rep-template-name').value;
         const matchIdx = plantillasRep.findIndex(p => p.nombre === currentName);
         if(matchIdx !== -1) sel.value = matchIdx;
@@ -554,7 +581,6 @@
         saveRepTemplates();
         actualizarSelectPlantillasRep();
         document.getElementById('sel-template-rep').value = plantillasRep.length - 1;
-        // La notificación la maneja saveRepTemplates / syncCloud
     }
 
     function actualizarPlantillaRep() {
@@ -562,7 +588,6 @@
         if(idx === "") { toast('Primero selecciona una plantilla del menú superior para sobrescribirla.', 'err'); return; }
         
         const nombreNuevo = document.getElementById('rep-template-name').value.trim() || plantillasRep[idx].nombre;
-        
         plantillasRep[idx].nombre = nombreNuevo;
         plantillasRep[idx].momentos = JSON.parse(JSON.stringify(momentosActuales));
         
@@ -640,7 +665,7 @@
 
 
     // =========================================================
-    // VISOR Y GENERADOR DE PDF (DISEÑO EDITORIAL LIMPIO)
+    // VISOR Y GENERADOR DE PDF
     // =========================================================
     
     let pdfDefinicionActual = null;
@@ -659,7 +684,6 @@
         const validez = document.getElementById('validez').value;
         const fechaActual = new Date().toLocaleDateString('es-CO');
 
-        // DISEÑO DE TABLA LIMPIO
         const bodyTabla = [
             [
                 { text: 'Descripción del Servicio', bold: true, color: '#475569', margin: [0, 8, 0, 8] },
@@ -798,6 +822,7 @@
                         {
                             columns: [
                                 { text: m.cancion || 'Por definir...', fontSize: 16, bold: true, color: '#1f2937', width: '*' },
+                                // CORRECCIÓN DEL SÍMBOLO PARA PDF
                                 linkFinal ? { text: 'Ver en YouTube', link: linkFinal, color: '#ef4444', fontSize: 11, bold: true, alignment: 'right', decoration: 'underline', width: 'auto', margin: [0, 4, 0, 0] } : { text: '', width: 'auto' }
                             ]
                         },
@@ -956,7 +981,7 @@
         renderItems(); 
         inicializarRepertorio();
         loadCfg();
-        loadCloud(); // Llama a la nube al iniciar
+        loadCloud(); 
     };
     </script>
 </body>
