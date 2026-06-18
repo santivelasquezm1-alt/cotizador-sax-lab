@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Sax Lab - Cotizador y Repertorio Pro</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+    <style>
+        :root {
+            --font-sans: 'Segoe UI', system-ui, sans-serif;
+            --color-background-primary: #ffffff;
+            --color-background-secondary: #f8fafc;
+            --color-border-secondary: #cbd5e1;
+            --color-border-tertiary: #e2e8f0;
+            --color-text-primary: #0f172a;
+            --color-text-secondary: #475569;
+            --color-text-tertiary: #64748b;
+            --color-text-danger: #ef4444;
+            --color-text-success: #10b981;
+        }
+
+        *{box-sizing:border-box;margin:0;padding:0}
+        body { background-color: #f1f5f9; display: flex; justify-content: center; padding: 20px; font-family: var(--font-sans);}
+        
+        .app{width:100%;max-width:820px;padding:0 0 2rem; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);}
+
+        .hero{background:#26215C;border-radius:16px;padding:1.5rem 1.75rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between}
+        .hero-left{display:flex;align-items:center;gap:14px}
+        .hero-icon{width:44px;height:44px;border-radius:12px;background:#3C3489;border:1.5px solid #534AB7;display:flex;align-items:center;justify-content:center;color:#CECBF6;font-size:24px}
+        .hero-name{font-size:18px;font-weight:500;color:#EEEDFE;line-height:1.2}
+        .hero-sub{font-size:12px;color:#AFA9EC;margin-top:2px}
+        .hero-badge{background:#3C3489;border:0.5px solid #534AB7;color:#CECBF6;font-size:11px;padding:4px 12px;border-radius:100px}
+
+        .nav{display:flex;gap:2px;margin-bottom:1.5rem;background:var(--color-background-secondary);padding:4px;border-radius:12px; overflow-x: auto;}
+        .nav-btn{flex:1;padding:8px 10px;font-size:13px;cursor:pointer;border:none;background:none;color:var(--color-text-secondary);border-radius:8px;font-family:var(--font-sans);transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:5px;font-weight:400; white-space: nowrap;}
+        .nav-btn.active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:500;border:0.5px solid var(--color-border-tertiary); box-shadow: 0 1px 3px rgba(0,0,0,0.05);}
+        .nav-btn:hover:not(.active){color:var(--color-text-primary);background:var(--color-background-primary);opacity:0.6}
+
+        .panel{display:none}.panel.active{display:block}
+
+        .section-label{font-size:11px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+        .section-label i{font-size:13px;color:#7F77DD}
+
+        .card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:12px;}
+        .card-accent{border-left:3px solid #7F77DD;border-radius:0 14px 14px 0;padding-left:calc(1.5rem - 3px)}
+
+        .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+        .field{display:flex;flex-direction:column;gap:5px}
+        .field label{font-size:11px;color:var(--color-text-secondary);font-weight:500;display:flex;align-items:center;gap:4px}
+        .field label .req{color:#D85A30;font-size:13px;line-height:1}
+        .field label .opt{color:var(--color-text-tertiary);font-weight:400;font-size:11px}
+
+        input,select,textarea{width:100%;padding:9px 11px;border:0.5px solid var(--color-border-secondary);border-radius:9px;font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans);transition:all 0.15s;line-height:1.4}
+        input::placeholder{color:var(--color-text-tertiary);font-size:12px}
+        textarea{resize:vertical;min-height:80px}
+        input:focus,select:focus,textarea:focus{outline:none;border-color:#7F77DD;box-shadow:0 0 0 3px rgba(127,119,221,0.12)}
+
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:9px;font-size:13px;cursor:pointer;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans);transition:all 0.15s;font-weight:400;white-space:nowrap}
+        .btn:hover{background:var(--color-background-secondary)}
+        .btn-primary{background:#3C3489;color:#EEEDFE;border-color:#3C3489;font-weight:500}
+        .btn-primary:hover{background:#26215C}
+        .btn-save{background:#085041;color:#E1F5EE;border-color:#085041;font-weight:500}
+        .btn-save:hover{background:#04342C}
+        .btn-danger{background:#fff;color:#ef4444;border-color:#fca5a5;}
+        .btn-danger:hover{background:#fee2e2;}
+        .btn-pdf{background:#EEEDFE;color:#3C3489;border-color:#AFA9EC;font-weight:500}
+        .btn-pdf:hover{background:#CECBF6}
+        .btn-sm{padding:6px 12px;font-size:12px}
+        .btn-ghost{background:none;border:none;color:var(--color-text-tertiary);cursor:pointer;font-size:16px;padding:5px;border-radius:6px;line-height:1;display:inline-flex;}
+        .btn-ghost:hover{color:var(--color-text-danger);background:#fee2e2}
+
+        .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center}
+        .chip-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+        .chip{padding:11px 13px;border:0.5px solid var(--color-border-tertiary);border-radius:10px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:var(--color-background-primary);color:var(--color-text-primary);transition:all 0.15s;gap:8px;text-align:left}
+        .chip:hover{border-color:#7F77DD;background:#EEEDFE}
+        .chip-name{font-size:13px;color:var(--color-text-primary);flex:1}
+        .chip-price{font-size:12px;color:#7F77DD;font-weight:500;}
+        .chip-icon{width:28px;height:28px;border-radius:7px;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:13px;color:#7F77DD;flex-shrink:0}
+
+        .items-empty{text-align:center;padding:2rem 1rem;color:var(--color-text-tertiary);font-size:13px;border:1px dashed var(--color-border-tertiary);border-radius:10px;margin-bottom:10px}
+        table.items{width:100%;border-collapse:collapse;table-layout:fixed}
+        table.items th{font-size:11px;font-weight:500;color:var(--color-text-tertiary);text-align:left;padding:7px 8px;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);}
+        table.items td{padding:5px 4px;vertical-align:middle;border-bottom:0.5px solid var(--color-border-tertiary)}
+        table.items input{padding:6px 8px;font-size:12px;border-radius:7px}
+
+        .totals{background:var(--color-background-secondary);border-radius:10px;padding:14px 16px;margin-top:12px}
+        .total-row{display:flex;justify-content:space-between;font-size:13px;color:var(--color-text-secondary);padding:3px 0}
+        .total-final{display:flex;justify-content:space-between;font-size:16px;font-weight:500;color:var(--color-text-primary);padding-top:10px;margin-top:8px;border-top:0.5px solid var(--color-border-secondary)}
+
+        .metric-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+        .metric{background:var(--color-background-secondary);border-radius:12px;padding:1rem 1.25rem;display:flex;align-items:center;gap:12px}
+        .metric-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+        .metric-icon.purple{background:#EEEDFE;color:#534AB7}
+        .metric-icon.teal{background:#E1F5EE;color:#0F6E56}
+        .metric-icon.coral{background:#FAECE7;color:#993C1D}
+        .metric-val{font-size:20px;font-weight:500;color:var(--color-text-primary);}
+        .metric-lbl{font-size:11px;color:var(--color-text-tertiary);}
+
+        .hist-item{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+        .hist-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0}
+        .hist-dot.pendiente{background:#EF9F27}
+        .hist-dot.enviada{background:#378ADD}
+        .hist-dot.aceptada{background:#1D9E75}
+
+        .alert{padding:10px 14px;border-radius:9px;font-size:13px;margin-bottom:12px;display:none;position:fixed;top:20px;right:20px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);}
+        .alert-ok{background:#E1F5EE;color:#085041;border:0.5px solid #5DCAA5}
+        .alert-err{background:#FAECE7;color:#712B13;border:0.5px solid #F0997B}
+
+        .svc-row{display:grid;grid-template-columns:1fr 130px 32px;gap:8px;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+
+        /* REPERTORIO CON YOUTUBE */
+        .rep-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; align-items: flex-end; background: var(--color-background-secondary); padding: 12px; border-radius: 10px; border: 1px solid var(--color-border-tertiary); transition: all 0.2s;}
+        .rep-row:hover { border-color: #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        .rep-row input { background: white; font-size: 13px;}
+        .rep-row input.momento { font-weight: 600; color: #3C3489; border-color: transparent; }
+        .rep-row input.momento:focus { border-color: #7F77DD; }
+        
+        .rep-col { display: flex; flex-direction: column; gap: 4px; }
+        .rep-col-1 { flex: 1; min-width: 120px; }
+        .rep-col-2 { flex: 1.5; min-width: 180px; }
+        .rep-col-3 { flex: 1.5; min-width: 180px; }
+        
+        .youtube-label { display: flex; align-items: center; gap: 4px; color: #ef4444 !important;}
+
+        /* MODAL VISOR PDF */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(15, 23, 42, 0.85); z-index: 999; 
+            justify-content: center; align-items: flex-start; padding: 20px; 
+            overflow-y: auto; overflow-x: hidden;
+        }
+        .modal-wrapper { width: 100%; max-width: 900px; margin: auto; padding-bottom: 20px; }
+        .modal-actions-bar {
+            display: flex; justify-content: space-between; background: white; padding: 15px 20px; 
+            border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); position: sticky; top: 20px; z-index: 1000;
+        }
+        
+        #pdf-viewer-frame {
+            width: 100%; height: 75vh; border: none; border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); background: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="alerta" class="alert"></div>
+
+    <div class="app">
+        <div class="hero">
+            <div class="hero-left">
+                <div class="hero-icon" id="hero-icon-el">🎹</div>
+                <div>
+                    <div class="hero-name" id="hero-name">The Sax Lab</div>
+                    <div class="hero-sub" id="hero-sub">Música para eventos · Colombia</div>
+                </div>
+            </div>
+            <div class="hero-badge"><i class="ti ti-music-star"></i> Cotizador Pro</div>
+        </div>
+
+        <div class="nav">
+            <button class="nav-btn active" onclick="showTab('nueva')"><i class="ti ti-file-plus"></i> Cotización</button>
+            <button class="nav-btn" onclick="showTab('repertorio')"><i class="ti ti-playlist"></i> Repertorio</button>
+            <button class="nav-btn" onclick="showTab('historial')"><i class="ti ti-history"></i> Historial</button>
+            <button class="nav-btn" onclick="showTab('servicios')"><i class="ti ti-adjustments"></i> Servicios</button>
+            <button class="nav-btn" onclick="showTab('config')"><i class="ti ti-settings"></i> Perfil</button>
+        </div>
+
+        <div id="panel-nueva" class="panel active">
+            <div class="section-label"><i class="ti ti-user"></i> Cliente</div>
+            <div class="card">
+                <div class="g2" style="margin-bottom:10px">
+                    <div class="field"><label>Nombre <span class="req">*</span></label><input id="c-nom" placeholder="Ej: Camila y Andrés"/></div>
+                    <div class="field"><label>WhatsApp <span class="opt">— opcional</span></label><input id="c-tel" placeholder="+57 300 000 0000"/></div>
+                </div>
+                <div class="g2">
+                    <div class="field"><label>Correo <span class="opt">— opcional</span></label><input id="c-email" type="email" placeholder="cliente@correo.com"/></div>
+                    <div class="field"><label>Ciudad <span class="opt">— opcional</span></label><input id="c-ciudad" placeholder="Medellín"/></div>
+                </div>
+            </div>
+
+            <div class="section-label"><i class="ti ti-calendar-event"></i> Evento <span class="opt">— opcionales</span></div>
+            <div class="card">
+                <div class="g3" style="margin-bottom:10px">
+                    <div class="field"><label>Tipo de evento</label><select id="e-tipo" onchange="autoCambiarPlantilla(this.value)"><option>Boda religiosa</option><option>Boda civil</option><option>Quinceañera</option><option>Cumpleaños</option><option>Funeral / Exequias</option><option>Otro</option></select></div>
+                    <div class="field"><label>Fecha</label><input id="e-fecha" type="date"/></div>
+                    <div class="field"><label>Hora</label><input id="e-hora" type="time"/></div>
+                </div>
+                <div class="g2">
+                    <div class="field"><label>Lugar / Iglesia</label><input id="e-lugar" placeholder="Ej: Finca La María"/></div>
+                    <div class="field"><label>Duración</label><select id="e-dur"><option>1 hora</option><option>1.5 horas</option><option>2 horas</option><option>3 horas o más</option></select></div>
+                </div>
+            </div>
+
+            <div class="section-label"><i class="ti ti-bolt"></i> Servicios rápidos</div>
+            <div class="card"><div class="chip-grid" id="chips"></div></div>
+
+            <div class="section-label"><i class="ti ti-list-check"></i> Servicios en la cotización</div>
+            <div class="card card-accent">
+                <div id="items-empty" class="items-empty"><i class="ti ti-music-off"></i>Selecciona servicios arriba</div>
+                <table class="items" id="items-table" style="display:none">
+                    <thead><tr><th style="width:48%">Descripción</th><th style="width:12%; text-align:center">Cant.</th><th style="width:20%; text-align:right">Unit.</th><th style="width:15%; text-align:right">Subtotal</th><th style="width:5%"></th></tr></thead>
+                    <tbody id="items-body"></tbody>
+                </table>
+                <button class="btn btn-sm" onclick="addManual()" style="margin-top:10px"><i class="ti ti-plus"></i> Manual</button>
+
+                <div class="totals">
+                    <div class="total-row"><span>Subtotal</span><span id="t-sub">$ 0</span></div>
+                    <div class="total-row" id="desc-row" style="display:none"><span>Descuento (<span id="desc-pct">0</span>%)</span><span id="t-desc" style="color:var(--color-text-success)"></span></div>
+                    <div class="total-final"><span>Total</span><span id="t-total">$ 0</span></div>
+                </div>
+
+                <div class="g2" style="margin-top:12px">
+                    <div class="field"><label>Descuento % <span class="opt">— opcional</span></label><input id="descuento" type="number" min="0" max="100" placeholder="0" oninput="calcTotals()"/></div>
+                    <div class="field"><label>Validez</label><select id="validez"><option>15 días</option><option>30 días</option><option selected>45 días</option></select></div>
+                </div>
+            </div>
+
+            <div class="section-label"><i class="ti ti-notes"></i> Notas <span class="opt">— opcional</span></div>
+            <div class="card"><textarea id="notas" placeholder="Repertorio, músicos, equipo..."></textarea></div>
+
+            <div class="actions">
+                <button class="btn btn-save" onclick="guardarCotizacion()"><i class="ti ti-device-floppy"></i> Guardar Cotización</button>
+                <button class="btn btn-primary" onclick="abrirVistaPreviaCotizacion()"><i class="ti ti-eye"></i> Generar / Ver Factura</button>
+            </div>
+        </div>
+
+        <div id="panel-repertorio" class="panel">
+            
+            <div class="section-label"><i class="ti ti-bookmark"></i> Administrar Plantillas</div>
+            <div class="card">
+                <div class="field" style="margin-bottom: 15px;">
+                    <label>Mis plantillas guardadas</label>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <select id="sel-template-rep" style="flex:1;" onchange="cargarPlantillaDirecta(this.value)"><option value="">-- Seleccionar Plantilla --</option></select>
+                        <button class="btn btn-danger btn-sm" onclick="eliminarPlantillaRep()"><i class="ti ti-trash"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-label"><i class="ti ti-list-music"></i> Momentos Musicales & YouTube</div>
+            <div class="card card-accent" style="background: var(--color-background-primary);">
+                <div id="rep-inputs-container">
+                    </div>
+                <button class="btn btn-sm btn-primary" onclick="agregarMomentoRepertorio()" style="margin-top:5px; width:100%; padding: 12px;"><i class="ti ti-plus"></i> Añadir nuevo momento a la lista</button>
+            </div>
+
+            <div class="section-label"><i class="ti ti-device-floppy"></i> Guardar Cambios</div>
+            <div class="card" style="background:var(--color-background-secondary)">
+                <div class="field">
+                    <label>Nombre de la plantilla</label>
+                    <div style="display:flex; gap:10px; flex-wrap: wrap;">
+                        <input id="rep-template-name" placeholder="Ej: Boda Parroquia San José" style="flex:1; min-width: 200px;" />
+                        <button class="btn btn-save" onclick="guardarNuevaPlantillaRep()"><i class="ti ti-device-floppy"></i> Guardar como Nueva</button>
+                        <button class="btn" onclick="actualizarPlantillaRep()"><i class="ti ti-refresh"></i> Sobrescribir Actual</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-pdf" onclick="abrirVistaPreviaRepertorio()"><i class="ti ti-file-type-pdf"></i> Generar PDF del Repertorio</button>
+            </div>
+        </div>
+
+        <div id="panel-historial" class="panel">
+            <div class="metric-row">
+                <div class="metric"><div class="metric-icon purple"><i class="ti ti-file-text"></i></div><div><div class="metric-val" id="m-total">0</div><div class="metric-lbl">Cotizaciones</div></div></div>
+                <div class="metric"><div class="metric-icon coral"><i class="ti ti-clock"></i></div><div><div class="metric-val" id="m-pend">0</div><div class="metric-lbl">Pendientes</div></div></div>
+                <div class="metric"><div class="metric-icon teal"><i class="ti ti-coin"></i></div><div><div class="metric-val" id="m-ing">$ 0</div><div class="metric-lbl">Total estimado</div></div></div>
+            </div>
+            <div class="card"><div id="hist-list"></div></div>
+        </div>
+
+        <div id="panel-servicios" class="panel">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; margin-bottom:14px">
+                    <div style="font-size:14px;font-weight:500;">Mis servicios y tarifas</div>
+                    <button class="btn btn-primary btn-sm" onclick="addSvc()"><i class="ti ti-plus"></i> Nuevo</button>
+                </div>
+                <div id="svc-list"></div>
+            </div>
+        </div>
+
+        <div id="panel-config" class="panel">
+            <div class="card">
+                <div style="font-size:14px;font-weight:500;margin-bottom:14px;">Tu información (Aparecerá en el PDF)</div>
+                <div class="g2" style="margin-bottom:10px">
+                    <div class="field"><label>Logo (Emoji)</label><input id="cfg-logo" placeholder="Ej: 🎷, 🎹, 🎵"/></div>
+                    <div class="field"><label>Nombre / Marca</label><input id="cfg-nom"/></div>
+                </div>
+                <div class="field" style="margin-bottom:10px"><label>Especialidad</label><input id="cfg-esp"/></div>
+                
+                <div class="g2" style="margin-bottom:10px">
+                    <div class="field"><label>Teléfono</label><input id="cfg-tel"/></div>
+                    <div class="field"><label>Correo</label><input id="cfg-email" type="email"/></div>
+                </div>
+                <div class="field"><label>Ciudad</label><input id="cfg-ciudad"/></div>
+            </div>
+            <div class="card">
+                <div style="font-size:14px;font-weight:500;margin-bottom:10px;">Términos y condiciones</div>
+                <textarea id="cfg-term"></textarea>
+            </div>
+            <div class="actions">
+                <button class="btn btn-save" onclick="guardarCfg()"><i class="ti ti-device-floppy"></i> Guardar perfil</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-preview" class="modal-overlay">
+        <div class="modal-wrapper">
+            <div class="modal-actions-bar">
+                <button class="btn" onclick="cerrarModal()">
+                    <i class="ti ti-arrow-left"></i> Volver a editar
+                </button>
+                <button class="btn btn-pdf" onclick="descargarPDFDefinitivo()">
+                    <i class="ti ti-file-download"></i> Descargar Archivo PDF
+                </button>
+            </div>
+            <iframe id="pdf-viewer-frame" title="Vista Previa del PDF"></iframe>
+        </div>
+    </div>
+
+    <script>
+    // ==========================================
+    // SISTEMA HÍBRIDO (Nube + Memoria Local de Respaldo)
+    // ==========================================
+    const CLOUD_URL = "https://script.google.com/macros/s/AKfycbxs2sbKVpY_wZog-fuSVSEF0DnecdlJ4NaPOnqfWT-785UTAH9aCr4RqkNN_qdkVYGMng/exec";
+
+    function syncCloud() {
+        const payload = {
+            cotizaciones: cotizaciones,
+            svcs: svcs,
+            nextId: nextId,
+            cfg: cfg,
+            plantillasRep: plantillasRep
+        };
+        fetch(CLOUD_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+        }).then(() => toast('✓ Guardado en la nube', 'ok'))
+          .catch(() => toast('Guardado offline (Sin conexión)', 'err'));
+    }
+
+    function saveCots() { syncCloud(); localStorage.setItem('saxlab_cots', JSON.stringify(cotizaciones)); }
+    function saveSvcs() { syncCloud(); localStorage.setItem('saxlab_svcs', JSON.stringify(svcs)); localStorage.setItem('saxlab_nextId', nextId); }
+    function saveCfg()  { syncCloud(); localStorage.setItem('saxlab_cfg', JSON.stringify(cfg)); }
+    function saveRepTemplates() { syncCloud(); localStorage.setItem('saxlab_rep_templates_v2', JSON.stringify(plantillasRep)); }
+
+    // CARGA INICIAL DE DATOS (Por defecto usa el celular mientras descarga de la nube)
+    let items = [];
+    let cotizaciones = JSON.parse(localStorage.getItem('saxlab_cots')) || [];
+    let nextId = parseInt(localStorage.getItem('saxlab_nextId')) || 9;
+    
+    let svcs = JSON.parse(localStorage.getItem('saxlab_svcs')) || [
+        {id:1, n:"Solista vocal litúrgico matrimonial", p:220000},
+        {id:2, n:"Solista para boda religiosa + Violin", p:420000},
+        {id:3, n:"Saxofón Tenor para evento social (1 hr)", p:300000},
+        {id:4, n:"Recepción Quinceañera (Saxofón)", p:250000},
+        {id:5, n:"Cantata para funeral / exequias", p:250000},
+        {id:6, n:"Equipo de sonido básico", p:150000}
+    ];
+
+    let cfg = JSON.parse(localStorage.getItem('saxlab_cfg')) || {
+        logo: "🎹",
+        nom: "Santiago Velásquez", 
+        esp: "Música litúrgica y Saxofón", 
+        tel: "+57 3103792944", 
+        email: "santivelasquezm1@gmail.com", 
+        ciudad: "Medellín, Antioquia", 
+        term: "El 50% del valor se cancela como anticipo al confirmar la reserva. El saldo restante se paga el día del evento. En caso de cancelación con menos de 72 horas, el anticipo no es reembolsable.\nEste mensaje es una cotización informativa. No es válido como factura de venta."
+    };
+
+    // Plantillas de Repertorio por defecto ampliadas
+    let plantillasPorDefecto = [
+        { nombre: "Boda religiosa", momentos: [{momento: "Marcha de Entrada", cancion: "", link: ""}, {momento: "Señor ten piedad", cancion: "", link: ""}, {momento: "Aleluya", cancion: "", link: ""}, {momento: "Ofertorio", cancion: "", link: ""}, {momento: "Santo", cancion: "", link: ""}, {momento: "Paz", cancion: "", link: ""}, {momento: "Comunión", cancion: "", link: ""}, {momento: "Firmas", cancion: "", link: ""}, {momento: "Salida", cancion: "", link: ""}] },
+        { nombre: "Boda civil", momentos: [{momento: "Ingreso de invitados", cancion: "", link: ""}, {momento: "Entrada del novio", cancion: "", link: ""}, {momento: "Entrada de la novia", cancion: "", link: ""}, {momento: "Firma de actas", cancion: "", link: ""}, {momento: "Salida", cancion: "", link: ""}] },
+        { nombre: "Quinceañera", momentos: [{momento: "Recepción", cancion: "", link: ""}, {momento: "Entrada Quinceañera", cancion: "", link: ""}, {momento: "El Vals", cancion: "", link: ""}, {momento: "Brindis", cancion: "", link: ""}, {momento: "Baile", cancion: "", link: ""}] },
+        { nombre: "Cumpleaños", momentos: [{momento: "Recepción", cancion: "", link: ""}, {momento: "Entrada", cancion: "", link: ""}, {momento: "Feliz Cumpleaños", cancion: "", link: ""}, {momento: "Baile", cancion: "", link: ""}] },
+        { nombre: "Funeral / Exequias", momentos: [{momento: "Canto de Entrada", cancion: "", link: ""}, {momento: "Salmo Responsorial", cancion: "", link: ""}, {momento: "Aleluya", cancion: "", link: ""}, {momento: "Ofertorio", cancion: "", link: ""}, {momento: "Santo", cancion: "", link: ""}, {momento: "Comunión", cancion: "", link: ""}, {momento: "Despedida", cancion: "", link: ""}] }
+    ];
+    let plantillasRep = JSON.parse(localStorage.getItem('saxlab_rep_templates_v2')) || plantillasPorDefecto;
+    
+    let momentosActuales = [];
+
+    const fmt = n => "$ " + Math.round(n).toLocaleString('es-CO');
+
+    // Función que carga los datos de la nube al abrir la página
+    async function loadCloud() {
+        toast('Sincronizando con la nube...', 'ok');
+        try {
+            let res = await fetch(CLOUD_URL);
+            let data = await res.json();
+            
+            if(data && Object.keys(data).length > 0) {
+                if(data.cotizaciones) cotizaciones = data.cotizaciones;
+                if(data.svcs) svcs = data.svcs;
+                if(data.nextId) nextId = data.nextId;
+                if(data.cfg) cfg = data.cfg;
+                if(data.plantillasRep) plantillasRep = data.plantillasRep;
+                
+                // Guardar como respaldo local
+                localStorage.setItem('saxlab_cots', JSON.stringify(cotizaciones));
+                localStorage.setItem('saxlab_svcs', JSON.stringify(svcs));
+                localStorage.setItem('saxlab_nextId', nextId);
+                localStorage.setItem('saxlab_cfg', JSON.stringify(cfg));
+                localStorage.setItem('saxlab_rep_templates_v2', JSON.stringify(plantillasRep));
+
+                // Refrescar toda la interfaz visual
+                renderChips();
+                renderItems();
+                inicializarRepertorio();
+                loadCfg();
+                renderHist();
+                renderSvcs();
+                document.getElementById('hero-icon-el').textContent = cfg.logo || "🎹";
+                document.getElementById('hero-name').textContent = cfg.nom;
+                document.getElementById('hero-sub').textContent = cfg.esp + ' · ' + cfg.ciudad;
+                
+                toast('✓ Sistema en línea y sincronizado', 'ok');
+            } else {
+                toast('✓ Base de datos conectada (Vacía)', 'ok');
+            }
+        } catch(e) {
+            console.log("No se pudo conectar a la nube. Usando datos guardados en el dispositivo.");
+        }
+    }
+
+    // Inicializar visualmente de inmediato con los datos locales
+    document.getElementById('hero-icon-el').textContent = cfg.logo || "🎹";
+    document.getElementById('hero-name').textContent = cfg.nom;
+    document.getElementById('hero-sub').textContent = cfg.esp + ' · ' + cfg.ciudad;
+
+    // ==========================================
+    // UI Y NAVEGACIÓN
+    // ==========================================
+    function showTab(t){
+        document.querySelectorAll('.nav-btn, .panel').forEach(e => e.classList.remove('active'));
+        document.querySelector(`[onclick="showTab('${t}')"]`).classList.add('active');
+        document.getElementById('panel-'+t).classList.add('active');
+        if(t==='historial') renderHist();
+        if(t==='servicios') renderSvcs();
+        if(t==='config') loadCfg();
+    }
+
+    function toast(msg, tipo){
+        const a = document.getElementById('alerta');
+        a.textContent = msg; 
+        a.className = 'alert alert-' + (tipo==='ok' ? 'ok' : 'err'); 
+        a.style.display = 'block';
+        setTimeout(() => a.style.display = 'none', 3000);
+    }
+
+    // ==========================================
+    // LÓGICA DE REPERTORIO Y SINCRONIZACIÓN
+    // ==========================================
+    
+    function inicializarRepertorio() {
+        const tipoActual = document.getElementById('e-tipo').value;
+        const match = plantillasRep.find(p => p.nombre.toLowerCase() === tipoActual.toLowerCase()) || 
+                      plantillasRep.find(p => p.nombre.toLowerCase().includes(tipoActual.toLowerCase().split(' ')[0]));
+        
+        if (match) {
+            momentosActuales = JSON.parse(JSON.stringify(match.momentos));
+            document.getElementById('rep-template-name').value = match.nombre;
+        } else {
+            momentosActuales = [{ momento: "Entrada", cancion: "", link: "" }];
+        }
+        renderRepertorioInputs();
+    }
+
+    function autoCambiarPlantilla(tipo) {
+        const match = plantillasRep.find(p => p.nombre.toLowerCase() === tipo.toLowerCase()) || 
+                      plantillasRep.find(p => p.nombre.toLowerCase().includes(tipo.toLowerCase().split(' ')[0]));
+        
+        if (match) {
+            momentosActuales = JSON.parse(JSON.stringify(match.momentos));
+            document.getElementById('rep-template-name').value = match.nombre;
+            
+            const idx = plantillasRep.indexOf(match);
+            document.getElementById('sel-template-rep').value = idx;
+
+            renderRepertorioInputs();
+            toast(`✓ Repertorio ajustado para: ${match.nombre}`, 'ok');
+        }
+    }
+
+    function renderRepertorioInputs() {
+        const cont = document.getElementById('rep-inputs-container');
+        cont.innerHTML = momentosActuales.map((m, index) => `
+            <div class="rep-row">
+                <div class="rep-col rep-col-1">
+                    <label style="font-size:10px; color:var(--color-text-tertiary); text-transform:uppercase; font-weight:600;">Momento</label>
+                    <input type="text" class="momento" value="${m.momento}" placeholder="Ej: Entrada" oninput="momentosActuales[${index}].momento=this.value" />
+                </div>
+                <div class="rep-col rep-col-2">
+                    <label style="font-size:10px; color:var(--color-text-tertiary); text-transform:uppercase; font-weight:600;">Canción / Artista</label>
+                    <input type="text" class="cancion" value="${m.cancion}" placeholder="Ej: Perfect - Ed Sheeran" oninput="momentosActuales[${index}].cancion=this.value" />
+                </div>
+                <div class="rep-col rep-col-3">
+                    <label class="youtube-label" style="font-size:10px; text-transform:uppercase; font-weight:600;"><i class="ti ti-brand-youtube"></i> Link YouTube (Opcional)</label>
+                    <input type="url" class="link" value="${m.link || ''}" placeholder="https://youtube.com/..." oninput="momentosActuales[${index}].link=this.value" />
+                </div>
+                <button class="btn-ghost" style="margin-bottom:2px;" onclick="eliminarMomentoRepertorio(${index})" title="Eliminar fila"><i class="ti ti-trash"></i></button>
+            </div>
+        `).join('');
+        actualizarSelectPlantillasRep();
+    }
+
+    function agregarMomentoRepertorio() {
+        momentosActuales.push({ momento: "Nuevo Momento", cancion: "", link: "" });
+        renderRepertorioInputs();
+    }
+
+    function eliminarMomentoRepertorio(index) {
+        momentosActuales.splice(index, 1);
+        renderRepertorioInputs();
+    }
+
+    function actualizarSelectPlantillasRep() {
+        const sel = document.getElementById('sel-template-rep');
+        const valorActual = sel.value;
+        sel.innerHTML = '<option value="">-- Seleccionar Plantilla --</option>' + 
+            plantillasRep.map((p, i) => `<option value="${i}">${p.nombre}</option>`).join('');
+        
+        // Intentar mantener selección si el nombre coincide
+        const currentName = document.getElementById('rep-template-name').value;
+        const matchIdx = plantillasRep.findIndex(p => p.nombre === currentName);
+        if(matchIdx !== -1) sel.value = matchIdx;
+    }
+
+    function cargarPlantillaDirecta(idx) {
+        if(idx === "") return;
+        const plantillaSeleccionada = plantillasRep[idx];
+        momentosActuales = JSON.parse(JSON.stringify(plantillaSeleccionada.momentos));
+        document.getElementById('rep-template-name').value = plantillaSeleccionada.nombre;
+        renderRepertorioInputs();
+        toast(`✓ Plantilla cargada.`, 'ok');
+    }
+
+    function guardarNuevaPlantillaRep() {
+        const nombre = document.getElementById('rep-template-name').value.trim();
+        if(!nombre) { toast('Por favor, escribe un nombre para la nueva plantilla.', 'err'); return; }
+        
+        const clonMomentos = JSON.parse(JSON.stringify(momentosActuales));
+        plantillasRep.push({ nombre: nombre, momentos: clonMomentos });
+        
+        saveRepTemplates();
+        actualizarSelectPlantillasRep();
+        document.getElementById('sel-template-rep').value = plantillasRep.length - 1;
+        // La notificación la maneja saveRepTemplates / syncCloud
+    }
+
+    function actualizarPlantillaRep() {
+        const idx = document.getElementById('sel-template-rep').value;
+        if(idx === "") { toast('Primero selecciona una plantilla del menú superior para sobrescribirla.', 'err'); return; }
+        
+        const nombreNuevo = document.getElementById('rep-template-name').value.trim() || plantillasRep[idx].nombre;
+        
+        plantillasRep[idx].nombre = nombreNuevo;
+        plantillasRep[idx].momentos = JSON.parse(JSON.stringify(momentosActuales));
+        
+        saveRepTemplates();
+        actualizarSelectPlantillasRep();
+    }
+
+    function eliminarPlantillaRep() {
+        const idx = document.getElementById('sel-template-rep').value;
+        if(idx === "") { toast('Selecciona una plantilla para eliminar.', 'err'); return; }
+        
+        if(confirm(`¿Estás seguro de que deseas eliminar la plantilla "${plantillasRep[idx].nombre}"?`)){
+            plantillasRep.splice(idx, 1);
+            saveRepTemplates();
+            document.getElementById('sel-template-rep').value = "";
+            document.getElementById('rep-template-name').value = "";
+            actualizarSelectPlantillasRep();
+        }
+    }
+
+    // ==========================================
+    // LÓGICA DE COTIZADOR
+    // ==========================================
+    function renderChips(){
+        document.getElementById('chips').innerHTML = svcs.map(s => `
+            <button class="chip" onclick="addFromSvc(${s.id})">
+                <div class="chip-icon"><i class="ti ti-music"></i></div>
+                <span class="chip-name">${s.n}</span>
+                <span class="chip-price">${fmt(s.p)}</span>
+            </button>`).join('');
+    }
+
+    function addFromSvc(id){
+        const s = svcs.find(x => x.id === id); 
+        if(s) { items.push({d: s.n, c: 1, p: s.p}); renderItems(); }
+    }
+    function addManual(){ items.push({d: "", c: 1, p: 0}); renderItems(); }
+    function delItem(i){ items.splice(i,1); renderItems(); }
+
+    function renderItems(){
+        const emp = document.getElementById('items-empty');
+        const tbl = document.getElementById('items-table');
+        if(!items.length){ emp.style.display = 'block'; tbl.style.display = 'none'; calcTotals(); return; }
+        
+        emp.style.display = 'none'; tbl.style.display = 'table';
+        document.getElementById('items-body').innerHTML = items.map((it, i) => `
+            <tr>
+                <td><input value="${it.d}" oninput="items[${i}].d=this.value"/></td>
+                <td><input type="number" min="1" value="${it.c}" oninput="items[${i}].c=parseInt(this.value)||1; actualizarFila(${i})" style="text-align:center;"/></td>
+                <td><input type="number" min="0" value="${it.p}" oninput="items[${i}].p=parseFloat(this.value)||0; actualizarFila(${i})" style="text-align:right;"/></td>
+                <td id="subt-${i}" style="text-align:right; font-weight:bold; color:#3C3489;">${fmt(it.c * it.p)}</td>
+                <td style="text-align:center"><button class="btn-ghost" onclick="delItem(${i})">×</button></td>
+            </tr>`).join('');
+        calcTotals();
+    }
+
+    function actualizarFila(i){
+        document.getElementById('subt-'+i).textContent = fmt(items[i].c * items[i].p);
+        calcTotals();
+    }
+
+    function calcTotals(){
+        const sub = items.reduce((a, it) => a + it.c * it.p, 0);
+        const pct = parseFloat(document.getElementById('descuento').value) || 0;
+        const desc = sub * pct / 100;
+        document.getElementById('t-sub').textContent = fmt(sub);
+        document.getElementById('t-total').textContent = fmt(sub - desc);
+        const dr = document.getElementById('desc-row');
+        if(pct > 0){
+            dr.style.display = 'flex'; 
+            document.getElementById('desc-pct').textContent = pct; 
+            document.getElementById('t-desc').textContent = '-' + fmt(desc);
+        } else { dr.style.display = 'none'; }
+    }
+
+
+    // =========================================================
+    // VISOR Y GENERADOR DE PDF (DISEÑO EDITORIAL LIMPIO)
+    // =========================================================
+    
+    let pdfDefinicionActual = null;
+    let pdfNombreArchivoActual = "Documento.pdf";
+
+    // --- 1. DEFINICIÓN DEL PDF DE COTIZACIÓN ---
+    function crearDefinicionCotizacion() {
+        const nombreCliente = document.getElementById('c-nom').value || '—';
+        const telCliente = document.getElementById('c-tel').value || '—';
+        const emailCliente = document.getElementById('c-email').value || '—';
+        const tipoEvento = document.getElementById('e-tipo').value || '—';
+        const fechaEvento = document.getElementById('e-fecha').value || '—';
+        const horaEvento = document.getElementById('e-hora').value || '';
+        const lugarEvento = document.getElementById('e-lugar').value || '—';
+        const notas = document.getElementById('notas').value || 'Ninguna.';
+        const validez = document.getElementById('validez').value;
+        const fechaActual = new Date().toLocaleDateString('es-CO');
+
+        // DISEÑO DE TABLA LIMPIO
+        const bodyTabla = [
+            [
+                { text: 'Descripción del Servicio', bold: true, color: '#475569', margin: [0, 8, 0, 8] },
+                { text: 'Cant.', bold: true, alignment: 'center', color: '#475569', margin: [0, 8, 0, 8] },
+                { text: 'V. Unitario', bold: true, alignment: 'right', color: '#475569', margin: [0, 8, 0, 8] },
+                { text: 'Subtotal', bold: true, alignment: 'right', color: '#475569', margin: [0, 8, 0, 8] }
+            ]
+        ];
+
+        if(items.length === 0){
+            bodyTabla.push([{text: 'No hay servicios agregados', colSpan: 4, alignment: 'center', margin: [0, 15, 0, 15], color: '#94a3b8'}, {}, {}, {}]);
+        } else {
+            items.forEach(it => {
+                bodyTabla.push([
+                    { text: it.d, margin: [0, 12, 0, 12] },
+                    { text: it.c.toString(), alignment: 'center', margin: [0, 12, 0, 12] },
+                    { text: fmt(it.p), alignment: 'right', margin: [0, 12, 0, 12] },
+                    { text: fmt(it.c * it.p), alignment: 'right', bold: true, color: '#3C3489', margin: [0, 12, 0, 12] }
+                ]);
+            });
+        }
+
+        const sub = items.reduce((a, it) => a + it.c * it.p, 0);
+        const pct = parseFloat(document.getElementById('descuento').value) || 0;
+        const desc = sub * pct / 100;
+        const total = sub - desc;
+
+        let subtotalesSeccion = [
+            { columns: [ { width: '*', text: '' }, { width: 120, text: 'Subtotal', margin: [0, 5, 0, 5], color: '#64748b' }, { width: 120, text: fmt(sub), alignment: 'right', margin: [0, 5, 0, 5] } ] }
+        ];
+
+        if(pct > 0) {
+            subtotalesSeccion.push({ columns: [ { width: '*', text: '' }, { width: 120, text: `Descuento (${pct}%)`, margin: [0, 5, 0, 5], color: '#D85A30' }, { width: 120, text: `-${fmt(desc)}`, alignment: 'right', margin: [0, 5, 0, 5], color: '#D85A30' } ] });
+        }
+        subtotalesSeccion.push({ columns: [ { width: '*', text: '' }, { width: 120, text: 'TOTAL A PAGAR', bold: true, fontSize: 16, color: '#26215C', margin: [0, 10, 0, 0] }, { width: 120, text: fmt(total), bold: true, fontSize: 16, alignment: 'right', color: '#26215C', margin: [0, 10, 0, 0] } ] });
+
+        return {
+            pageSize: 'LETTER',
+            pageMargins: [50, 50, 50, 50],
+            content: [
+                {
+                    columns: [
+                        {
+                            width: '*',
+                            text: [
+                                { text: cfg.nom + '\n', fontSize: 22, bold: true, color: '#26215C' },
+                                { text: cfg.esp + '\n', fontSize: 11, color: '#64748b', margin: [0, 4, 0, 0] },
+                                { text: `Tel: ${cfg.tel}  |  Correo: ${cfg.email}\n${cfg.ciudad}`, fontSize: 10, color: '#94a3b8', margin: [0, 4, 0, 0] }
+                            ]
+                        },
+                        {
+                            width: 'auto',
+                            alignment: 'right',
+                            text: [
+                                { text: 'COTIZACIÓN\n', fontSize: 20, bold: true, color: '#3C3489', letterSpacing: 1 },
+                                { text: `Fecha: ${fechaActual}\n`, fontSize: 10, color: '#64748b', margin: [0, 4, 0, 0] },
+                                { text: `Válida por: ${validez}`, fontSize: 10, bold: true, margin: [0, 2, 0, 0] }
+                            ]
+                        }
+                    ], margin: [0, 0, 0, 30]
+                },
+                {
+                    columns: [
+                        {
+                            width: '48%',
+                            fillColor: '#f8fafc',
+                            margin: [0, 0, 10, 0],
+                            stack: [
+                                { text: 'DATOS DEL CLIENTE', bold: true, fontSize: 10, color: '#3C3489', margin: [10, 12, 10, 10], letterSpacing: 0.5 },
+                                { text: [{text: 'Nombre: ', bold: true, color: '#475569'}, nombreCliente], fontSize: 11, margin: [10, 0, 10, 4] },
+                                { text: [{text: 'Teléfono: ', bold: true, color: '#475569'}, telCliente], fontSize: 11, margin: [10, 0, 10, 4] },
+                                { text: [{text: 'Correo: ', bold: true, color: '#475569'}, emailCliente], fontSize: 11, margin: [10, 0, 10, 10] }
+                            ]
+                        },
+                        {
+                            width: '48%',
+                            fillColor: '#f8fafc',
+                            margin: [10, 0, 0, 0],
+                            stack: [
+                                { text: 'DETALLES DEL EVENTO', bold: true, fontSize: 10, color: '#3C3489', margin: [10, 12, 10, 10], letterSpacing: 0.5 },
+                                { text: [{text: 'Tipo: ', bold: true, color: '#475569'}, tipoEvento], fontSize: 11, margin: [10, 0, 10, 4] },
+                                { text: [{text: 'Fecha y Hora: ', bold: true, color: '#475569'}, `${fechaEvento} ${horaEvento}`], fontSize: 11, margin: [10, 0, 10, 4] },
+                                { text: [{text: 'Lugar: ', bold: true, color: '#475569'}, lugarEvento], fontSize: 11, margin: [10, 0, 10, 10] }
+                            ]
+                        }
+                    ], margin: [0, 0, 0, 40]
+                },
+                {
+                    table: { 
+                        headerRows: 1, 
+                        widths: ['*', '15%', '22%', '22%'], 
+                        body: bodyTabla 
+                    },
+                    layout: {
+                        hLineWidth: function (i, node) { return (i === 0 || i === node.table.body.length) ? 0 : 1; },
+                        vLineWidth: function (i, node) { return 0; },
+                        hLineColor: function (i, node) { return '#e2e8f0'; },
+                        paddingLeft: function(i, node) { return 0; },
+                        paddingRight: function(i, node) { return 0; }
+                    },
+                    margin: [0, 0, 0, 20]
+                },
+                { unbreakable: true, stack: subtotalesSeccion, margin: [0, 0, 0, 40] },
+                {
+                    unbreakable: true,
+                    stack: [
+                        { text: 'NOTAS ADICIONALES', bold: true, fontSize: 10, color: '#3C3489', margin: [0, 0, 0, 8], letterSpacing: 0.5 },
+                        { text: notas, fontSize: 10, color: '#475569', margin: [0, 0, 0, 25], lineHeight: 1.4 },
+                        { text: 'CONDICIONES DEL SERVICIO', bold: true, fontSize: 10, color: '#3C3489', margin: [0, 0, 0, 8], letterSpacing: 0.5 },
+                        { text: cfg.term, fontSize: 9, color: '#94a3b8', margin: [0, 0, 0, 0], lineHeight: 1.4 }
+                    ]
+                }
+            ],
+            defaultStyle: { font: 'Roboto' }
+        };
+    }
+
+    // --- 2. DEFINICIÓN DEL PDF DE REPERTORIO ---
+    function crearDefinicionRepertorio() {
+        const nombreCliente = document.getElementById('c-nom').value || 'Cliente';
+        const tipoEvento = document.getElementById('rep-template-name').value || document.getElementById('e-tipo').value || 'Evento';
+
+        let listaCancionesPdf = [];
+        
+        momentosActuales.forEach(m => {
+            if(m.momento.trim() !== '') {
+                
+                let linkFinal = m.link ? m.link.trim() : null;
+                if(linkFinal && !linkFinal.startsWith('http')) { linkFinal = 'https://' + linkFinal; }
+
+                let tarjetaCancion = {
+                    unbreakable: true, 
+                    margin: [0, 0, 0, 25],
+                    stack: [
+                        { text: m.momento.toUpperCase(), fontSize: 10, bold: true, color: '#3C3489', margin: [0, 0, 0, 6], letterSpacing: 1 },
+                        {
+                            columns: [
+                                { text: m.cancion || 'Por definir...', fontSize: 16, bold: true, color: '#1f2937', width: '*' },
+                                linkFinal ? { text: '▶ Escuchar', link: linkFinal, color: '#ef4444', fontSize: 11, bold: true, alignment: 'right', decoration: 'underline', width: 'auto', margin: [0, 4, 0, 0] } : { text: '', width: 'auto' }
+                            ]
+                        },
+                        { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 512, y2: 0, lineWidth: 1, lineColor: '#e2e8f0' }], margin: [0, 12, 0, 0] }
+                    ]
+                };
+
+                listaCancionesPdf.push(tarjetaCancion);
+            }
+        });
+
+        if(listaCancionesPdf.length === 0) {
+            listaCancionesPdf.push({ text: 'No hay canciones en la lista aún.', fontSize: 12, alignment: 'center', margin: [0, 20], color: '#94a3b8' });
+        }
+
+        return {
+            pageSize: 'LETTER',
+            pageMargins: [50, 50, 50, 50], 
+            content: [
+                {
+                    text: 'REPERTORIO MUSICAL', 
+                    fontSize: 26, bold: true, color: '#26215C', margin: [0, 0, 0, 8]
+                },
+                {
+                    text: `${tipoEvento} · ${nombreCliente}`, 
+                    fontSize: 14, color: '#64748b', margin: [0, 0, 0, 40]
+                },
+                {
+                    stack: listaCancionesPdf
+                }
+            ],
+            defaultStyle: { font: 'Roboto' }
+        };
+    }
+
+    // --- 3. ACCIONES DEL MODAL ---
+    function mostrarModalPDF(docDef, nombreDescarga) {
+        pdfDefinicionActual = docDef;
+        pdfNombreArchivoActual = nombreDescarga;
+        
+        toast('Cargando visor PDF...', 'ok');
+        pdfMake.createPdf(docDef).getDataUrl((dataUrl) => {
+            document.getElementById('pdf-viewer-frame').src = dataUrl;
+            document.getElementById('modal-preview').style.display = 'flex';
+        });
+    }
+
+    function abrirVistaPreviaCotizacion() {
+        if(!document.getElementById('c-nom').value.trim()) { toast('Por favor ingresa el nombre del cliente en la pestaña Cotización.', 'err'); return; }
+        const nombreCliente = document.getElementById('c-nom').value.replace(/\s+/g, '_');
+        mostrarModalPDF(crearDefinicionCotizacion(), `Cotizacion_${nombreCliente}.pdf`);
+    }
+
+    function abrirVistaPreviaRepertorio() {
+        let nombreCliente = document.getElementById('c-nom').value;
+        nombreCliente = nombreCliente ? '_' + nombreCliente.replace(/\s+/g, '_') : '';
+        mostrarModalPDF(crearDefinicionRepertorio(), `Repertorio${nombreCliente}.pdf`);
+    }
+
+    function cerrarModal() {
+        document.getElementById('modal-preview').style.display = 'none';
+        document.getElementById('pdf-viewer-frame').src = ""; 
+    }
+
+    function descargarPDFDefinitivo() {
+        if(pdfDefinicionActual) {
+            pdfMake.createPdf(pdfDefinicionActual).download(pdfNombreArchivoActual);
+            toast('✓ Documento PDF descargado.', 'ok');
+        }
+    }
+
+    // ==========================================
+    // HISTORIAL Y PERFIL
+    // ==========================================
+    function guardarCotizacion(){
+        if(!document.getElementById('c-nom').value.trim()){ toast('Falta el nombre del cliente.','err'); return; }
+        const sub = items.reduce((a, it) => a + it.c * it.p, 0);
+        const pct = parseFloat(document.getElementById('descuento').value) || 0;
+        const cot = {
+            id: 'COT-'+Date.now().toString().slice(-6), cliente: document.getElementById('c-nom').value, 
+            total: sub*(1-pct/100), estado: 'pendiente', fecha_creacion: new Date().toLocaleDateString('es-CO')
+        };
+        cotizaciones.unshift(cot);
+        saveCots();
+        renderHist();
+    }
+
+    function renderHist(){
+        document.getElementById('m-total').textContent=cotizaciones.length;
+        document.getElementById('m-pend').textContent=cotizaciones.filter(c=>c.estado==='pendiente').length;
+        document.getElementById('m-ing').textContent=fmt(cotizaciones.reduce((a,c)=>a+c.total,0));
+        
+        const list = document.getElementById('hist-list');
+        if(!cotizaciones.length){ list.innerHTML='<div class="items-empty"><i class="ti ti-history"></i>Vacío</div>'; return; }
+        
+        list.innerHTML = cotizaciones.map((c, i) => `
+            <div class="hist-item">
+                <div class="hist-dot ${c.estado}"></div>
+                <div style="flex:1;">
+                    <div style="font-weight:500;">${c.cliente} <span style="font-size:11px;color:#888;">${c.id}</span></div>
+                    <div style="font-size:11px;color:#888;">${c.fecha_creacion}</div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-weight:bold; color:#3C3489;">${fmt(c.total)}</div>
+                    <div style="margin-top: 5px;">
+                        <select style="font-size:11px; padding:2px 4px; border-radius:4px; border:1px solid #ccc; margin-right: 5px;" 
+                                onchange="cotizaciones[${i}].estado=this.value; saveCots(); renderHist()">
+                            <option value="pendiente" ${c.estado==='pendiente'?'selected':''}>Pendiente</option>
+                            <option value="enviada" ${c.estado==='enviada'?'selected':''}>Enviada</option>
+                            <option value="aceptada" ${c.estado==='aceptada'?'selected':''}>Aceptada</option>
+                        </select>
+                        <button class="btn-ghost" onclick="if(confirm('¿Borrar cotización?')){cotizaciones.splice(${i},1); saveCots(); renderHist();}"><i class="ti ti-trash"></i></button>
+                    </div>
+                </div>
+            </div>`).join('');
+    }
+
+    function renderSvcs(){
+        const c = document.getElementById('svc-list');
+        c.innerHTML = svcs.map((s, i) => `
+            <div class="svc-row">
+                <input value="${s.n}" oninput="svcs[${i}].n=this.value; saveSvcs(); renderChips()"/>
+                <input type="number" value="${s.p}" oninput="svcs[${i}].p=parseFloat(this.value)||0; saveSvcs(); renderChips()"/>
+                <button class="btn-ghost" onclick="if(confirm('¿Borrar servicio?')){svcs.splice(${i},1); saveSvcs(); renderSvcs(); renderChips();}">×</button>
+            </div>`).join('');
+    }
+    function addSvc(){ svcs.push({id:nextId++, n:"Nuevo servicio", p:0}); saveSvcs(); renderSvcs(); renderChips(); }
+
+    function loadCfg(){
+        document.getElementById('cfg-logo').value = cfg.logo || "🎹";
+        document.getElementById('cfg-nom').value = cfg.nom;
+        document.getElementById('cfg-esp').value = cfg.esp;
+        document.getElementById('cfg-tel').value = cfg.tel;
+        document.getElementById('cfg-email').value = cfg.email;
+        document.getElementById('cfg-ciudad').value = cfg.ciudad;
+        document.getElementById('cfg-term').value = cfg.term;
+    }
+    function guardarCfg(){
+        cfg.logo = document.getElementById('cfg-logo').value || "🎹";
+        cfg.nom = document.getElementById('cfg-nom').value;
+        cfg.esp = document.getElementById('cfg-esp').value;
+        cfg.tel = document.getElementById('cfg-tel').value;
+        cfg.email = document.getElementById('cfg-email').value;
+        cfg.ciudad = document.getElementById('cfg-ciudad').value;
+        cfg.term = document.getElementById('cfg-term').value;
+        saveCfg();
+        
+        document.getElementById('hero-icon-el').textContent = cfg.logo;
+        document.getElementById('hero-name').textContent = cfg.nom;
+        document.getElementById('hero-sub').textContent = cfg.esp + ' · ' + cfg.ciudad;
+    }
+
+    // ARRANQUE INICIAL
+    window.onload = () => {
+        renderChips(); 
+        renderItems(); 
+        inicializarRepertorio();
+        loadCfg();
+        loadCloud(); // Llama a la nube al iniciar
+    };
+    </script>
+</body>
+</html>
